@@ -219,6 +219,7 @@ class NetCon:
 
     # def __del__(self):
     #     """ End of SSH connection """
+    #     self.connection.close()
     #     NetCon.logger.info('SSH session ended.', self.task_id, self.device)
 
     def __repr__(self) -> str:
@@ -242,10 +243,10 @@ class NetCon:
         # Connect to device to check device type, using SSH protocol:
         device_type = self._ssh_connect(autodetect=True)
 
-        try: # Collect device type object that match the current cryteria:
+        try: # Collect device type object that match the current criteria:
             device_type_object = DeviceType.objects.get(value=device_type)
         
-        except: # If the device type does not match the cryteria, it means that the device is not supported:
+        except: # If the device type does not match the criteria, it means that the device is not supported:
             NetCon.logger.info(
                 f'Device {self.name} currently possess an unsupported system {device_type}.',
                 self.task_id, self.device
@@ -271,7 +272,7 @@ class NetCon:
             self.device.device_type = device_type_object
             self.device.save()
         
-        except: # Return exception if there is a problem during the update of the device type objectd:
+        except: # Return exception if there is a problem during the update of the device type object:
             NetCon.logger.info(
                 f'When updating the device type, an exception occurs.',
                 self.task_id, self.device
@@ -290,7 +291,7 @@ class NetCon:
         if self.status is False:
             # Try to reconnect SSH connection:
             if self._ssh_connect() is False:
-                # Log faild conection status:
+                # Log failed confection status:
                 NetCon.logger.warning(
                     f'Command/s could not be executed because SSH connection was interrupted.',
                     self.task_id, self.device
@@ -386,7 +387,7 @@ class NetCon:
             elif isinstance(commands, list):
                 # Create temporary dictionary:
                 temporary_data = {}
-                # Runn command execution one by one:
+                # Run command execution one by one:
                 for command in commands:
                     if isinstance(command, str):
                         temporary_data[command] = return_data = self._command_execution(command)

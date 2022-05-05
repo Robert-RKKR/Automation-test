@@ -122,10 +122,11 @@ class Logger:
         if isinstance(correlated_object, object):
             
             # Check object type:
-            if correlated_object is None:
-                pass
-            else:
-                raise TypeError('Provided object is not supported by log')
+            # if correlated_object is None:
+            #     pass
+            # else:
+            #     raise TypeError('Provided object is not supported by log')
+            pass
 
         else:
             raise TypeError('Provided correlated object is not object type')

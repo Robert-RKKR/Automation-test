@@ -1,6 +1,6 @@
 # Document descryption:
 __author__ = 'Robert Tadeusz Kucharski'
-__version__ = '1.0'
+__version__ = '1.1'
 
 # Python Import:
 import requests
@@ -117,14 +117,14 @@ class ApiCon:
             Return the date retrieved from the network device using HTTPS.
         """
 
-        # Verify provided virables:
+        # Verify provided variables:
         self._verify(url, payload, headers)
 
         # Return the date retrieved from the network device using HTTPS.:
         return self._connection('GET', url, payload)
 
     def _verify(self, url, payload, headers) -> None:
-        """ Verify provided virables. """
+        """ Verify provided variables. """
 
         # Verify if the specified url variable is a string:
         if url is not None and not isinstance(url, str):

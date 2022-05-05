@@ -1,6 +1,6 @@
 # Document descryption:
 __author__ = 'Robert Tadeusz Kucharski'
-__version__ = '1.1'
+__version__ = '1.0'
 
 # Python Import:
 import time
