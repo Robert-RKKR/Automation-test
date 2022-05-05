@@ -1,6 +1,6 @@
 # Document descryption:
 __author__ = 'Robert Tadeusz Kucharski'
-__version__ = '1.0'
+__version__ = '1.1'
 
 # Python Import:
 import time
@@ -24,7 +24,7 @@ from logger.logger import Logger
 class NetCon:
 
     # Logger class initiation:
-    logger = Logger('SSH connection')
+    logger = Logger('SSH Netconf connection')
 
     def __init__(self, device: Device, task_id: str = None, repeat_connection: int = 3) -> None:
         """
@@ -71,6 +71,16 @@ class NetCon:
             # Rais exception:
             raise TypeError('The provided task ID variable must be a string.')
 
+        # Verify if the specified repeat_connection variable is a string:
+        if repeat_connection is None or isinstance(repeat_connection, int):
+            # Celery task ID declaration:
+            self.repeat_connection = repeat_connection
+        else:
+            # Change connection status to False:
+            self.status = False
+            # Rais exception:
+            raise TypeError('The provided repeat connection variable must be a intiger.')
+
         # Specify the device type name:
         if self.device.device_type is None:
             # If the device type is not specified, treat the device as automatically detected:
@@ -93,8 +103,8 @@ class NetCon:
         # Execution timer declaration:
         self.execution_time = None
 
-        # Repeat connection declaration:
-        self.repeat_connection = repeat_connection
+        # Session timer declaration:
+        self.session_timer = None
 
         # Device unsupported declaration:
         self.unsupported = None
@@ -106,12 +116,12 @@ class NetCon:
         if self.device_type == 'autodetect':
 
             # Connect to device to check device type, using SSH protocol:
-            device_type = self.update_device_type()
+            self.update_device_type()
             
         # Connect to device, using SSH protocol:
-        self._ssh_connect()
+        self.connection = self._ssh_connect()
 
-    def _ssh_connect(self) -> str:
+    def _ssh_connect(self, autodetect: bool = False) -> str:
         """ 
         Connect to device using SSH protocol.
         Returns the type of network device.
@@ -130,10 +140,10 @@ class NetCon:
                 )
             
                 # Check if the device type must be detected automatically:
-                if self.device_type == 'autodetect':
+                if autodetect:
 
                     # Connect to device to check device type, using SSH protocol:
-                    self.connection = SSHDetect(**{
+                    connection = SSHDetect(**{
                         'device_type': 'autodetect',
                         'host': self.hostname,
                         'username': self.username,
@@ -144,7 +154,7 @@ class NetCon:
                 else:
 
                     # Connect to device, using SSH protocol:
-                    self.connection = ConnectHandler(**{
+                    connection = ConnectHandler(**{
                         'device_type': self.device_type,
                         'host': self.hostname,
                         'username': self.username,
@@ -159,19 +169,33 @@ class NetCon:
                 # Change connection status to False:
                 self.status = False
                 # Wait 1 second i case of connection failure:
-                time.sleep(1)
+                if self.repeat_connection == i:
+                    # Return connection starus:
+                    return self.status
+                else:
+                    time.sleep(1)
+
             except NetMikoTimeoutException as error:
                 NetCon.logger.error(error, self.task_id, self.device)
                 # Change connection status to False:
                 self.status = False
                 # Wait 1 second i case of connection failure:
-                time.sleep(1)
+                if self.repeat_connection == i:
+                    # Return connection starus:
+                    return self.status
+                else:
+                    time.sleep(1)
+
             except ssh_exception.SSHException as error:
                 NetCon.logger.error(error, self.task_id, self.device)
                 # Change connection status to False:
                 self.status = False
                 # Wait 1 second i case of connection failure:
-                time.sleep(1)
+                if self.repeat_connection == i:
+                    # Return connection starus:
+                    return self.status
+                else:
+                    time.sleep(1)
 
             else:
 
@@ -182,13 +206,20 @@ class NetCon:
                 )
                 # Change connection status to True.
                 self.status = True
-                
-                # Collect information about device type:
-                return self.connection.autodetect()
 
-    def __del__(self):
-        """ End of SSH connection """
-        NetCon.logger.info('SSH session ended.', self.task_id, self.device)
+                if autodetect:
+                
+                    # Collect information about device type:
+                    return connection.autodetect()
+
+                else:
+
+                    # Return connection:
+                    return connection
+
+    # def __del__(self):
+    #     """ End of SSH connection """
+    #     NetCon.logger.info('SSH session ended.', self.task_id, self.device)
 
     def __repr__(self) -> str:
         """ Connection class representation is IP address and port number of Https server. """
@@ -197,7 +228,7 @@ class NetCon:
     def check_device_type(self) -> str:
         """ Obtain network device type information using SSH protocol. """
 
-        return self._ssh_connect()
+        return self._ssh_connect(autodetect=True)
 
     def update_device_type(self) -> str:
         """ Obtain network device type information using SSH protocol. And update Device type object. """
@@ -209,7 +240,7 @@ class NetCon:
         )
 
         # Connect to device to check device type, using SSH protocol:
-        device_type = self._ssh_connect()
+        device_type = self._ssh_connect(autodetect=True)
 
         try: # Collect device type object that match the current cryteria:
             device_type_object = DeviceType.objects.get(value=device_type)
@@ -219,8 +250,11 @@ class NetCon:
                 f'Device {self.name} currently possess an unsupported system {device_type}.',
                 self.task_id, self.device
             )
+            # Change unsupported status to True:
             self.unsupported = True
+            # Change connection status to False:
             self.status = False
+            # Return connection starus:
 
         else:
             # update current device type name:
@@ -249,16 +283,94 @@ class NetCon:
 
         return device_type
 
-    def send_command(self, command) -> str:
-        """ 
-            Takes list of strings or string (Networks commands), and send to network device using SSH protocol.
-            Usable only with enable levels commends.
-        """
+    def _connection_status(self) -> bool:
+        """ Check the connection status and try to re-connect if necessary. """
 
         # Check connection status:
         if self.status is False:
-            return False
+            # Try to reconnect SSH connection:
+            if self._ssh_connect() is False:
+                # Log faild conection status:
+                NetCon.logger.warning(
+                    f'Command/s could not be executed because SSH connection was interrupted.',
+                    self.task_id, self.device
+                )
+                # Return connection starus:
+                return False
         else:
+            return True
+
+    def _command_execution(self, command: str, expect_string: str = False):
+        """ Xxx. """
+
+        # Log start of command execution: 
+        NetCon.logger.debug(
+            f'Sending of a new CLI command "{command}" has been started.',
+            self.task_id, self.device
+        )
+
+        try:
+            if expect_string is False:
+                return_data = self.connection.send_command(
+                    command_string=command
+                )
+            else:
+                return_data = self.connection.send_command(
+                    command_string=command,
+                    expect_string=expect_string
+                )
+
+        except UnboundLocalError as error:
+            NetCon.logger.error(error, self.task_id, self.device)
+            # Change connection status to False:
+            self.status = False
+            # Return connection starus:
+            return False
+
+        except OSError as error:
+            NetCon.logger.error(error, self.task_id, self.device)
+            # Change connection status to False:
+            self.status = False
+            # Return connection starus:
+            return False
+
+        else:
+            # Log end of command execution:
+            NetCon.logger.info(
+                f'The CLI command "{command}" has been sent.',
+                self.task_id, self.device
+            )
+            # Return command output:
+            return return_data
+
+    def send_commands(self, commands: str or list, expect_string: str = False) -> str or list:
+        """
+        Retrieves a string or list containing network CLI commands, and sends them to a network device using SSH protocol.
+        ! Usable only with enable levels commend/s.
+        
+        Parameters:
+        -----------------
+        commands: String
+            Provided device object, to establish a SSH connection.
+        commands: List
+            Provided device object, to establish a SSH connection.
+        expect_string: String
+            Specifies the Celery task ID value, that will be added to logs messages.
+
+        Return:
+        --------
+        String containing command/s output.
+        """
+
+        if isinstance(commands, str) or isinstance(commands, list):
+            pass
+        else:
+            # Rais exception:
+            raise TypeError('The provided command/s variable must be a string or list.')
+
+        # Check connection status:
+        if self._connection_status():
+
             # Clear clock count time:
             self.execution_time = 0.00
 
@@ -268,35 +380,40 @@ class NetCon:
             # Collect data from device:
             return_data = None
 
-            # Try to sent command into network device:
-            try:
-                # Collect data from device:
-                NetCon.logger.debug(
-                    f'Sending of a new CLI command "{command}" has been started.',
-                    self.task_id, self.device
-                )
-                return_data = self.connection.send_command(command)
-                NetCon.logger.info(
-                    f'The CLI command "{command}" has been sent.',
-                    self.task_id, self.device
-                )
-            except UnboundLocalError as error:
-                NetCon.logger.error(error, self.task_id, self.device)
-                return error
+            if isinstance(commands, str):
+                return_data = self._command_execution(commands, expect_string)
+
+            elif isinstance(commands, list):
+                # Create temporary dictionary:
+                temporary_data = {}
+                # Runn command execution one by one:
+                for command in commands:
+                    if isinstance(command, str):
+                        temporary_data[command] = return_data = self._command_execution(command)
+                    elif isinstance(command, dict):
+                        self._command_execution(
+                            command['command'],
+                            command['expect_string']
+                        )
+                    else:
+                        # Rais exception:
+                        raise TypeError('Xxxxxxx.')
+                # Add temporary dictionary to return data:
+                return_data = temporary_data
 
             # Finish clock count & method execution time:
             finish_time = time.perf_counter()
             self.execution_time = round(finish_time - start_time, 5)
 
-            # Log time of command execution:
+            # Log time of command/s execution:
             if self.execution_time > 2:
                 NetCon.logger.debug(
-                    f'Execution of "{command}" command taken {self.execution_time} seconds.',
+                    f'Execution of "{commands}" command/s taken {self.execution_time} seconds.',
                     self.task_id, self.device
                 )
             else:
                 NetCon.logger.debug(
-                    f'Execution of "{command}" command taken {self.execution_time} second.',
+                    f'Execution of "{commands}" command/s taken {self.execution_time} second.',
                     self.task_id, self.device
                 )
             
@@ -305,8 +422,8 @@ class NetCon:
 
     def config_commands(self, command) -> str:
         """ 
-            Takes list of strings or string (Networks commands), and send to network device using SSH protocol.
-            Usable only with configuration terminal levels commends.
+        Takes list of strings or string (Networks commands), and send to network device using SSH protocol.
+        Usable only with configuration terminal levels commends.
         """
 
         # Check connection status:
