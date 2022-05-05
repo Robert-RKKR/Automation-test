@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 
     # Local Apps:
     'logger.apps.LoggerConfig',
+    'inventory.apps.InventoryConfig',
 ]
 
 MIDDLEWARE = [

@@ -58,7 +58,7 @@ class NetCon:
         else:
             # Change connection status to False:
             self.status = False
-            # Rais exception:
+            # Raise exception:
             raise TypeError('The provided device variable must be a valid object of the Device class.')
 
         # Verify if the specified taks_id variable is a string:
@@ -68,7 +68,7 @@ class NetCon:
         else:
             # Change connection status to False:
             self.status = False
-            # Rais exception:
+            # Raise exception:
             raise TypeError('The provided task ID variable must be a string.')
 
         # Verify if the specified repeat_connection variable is a string:
@@ -78,7 +78,7 @@ class NetCon:
         else:
             # Change connection status to False:
             self.status = False
-            # Rais exception:
+            # Raise exception:
             raise TypeError('The provided repeat connection variable must be a intiger.')
 
         # Specify the device type name:
@@ -365,7 +365,7 @@ class NetCon:
         if isinstance(commands, str) or isinstance(commands, list):
             pass
         else:
-            # Rais exception:
+            # Raise exception:
             raise TypeError('The provided command/s variable must be a string or list.')
 
         # Check connection status:
@@ -396,7 +396,7 @@ class NetCon:
                             command['expect_string']
                         )
                     else:
-                        # Rais exception:
+                        # Raise exception:
                         raise TypeError('Xxxxxxx.')
                 # Add temporary dictionary to return data:
                 return_data = temporary_data

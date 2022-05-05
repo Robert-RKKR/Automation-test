@@ -52,17 +52,17 @@ class NapCon:
         else:
             # Change connection status to False:
             self.status = False
-            # Rais exception:
+            # Raise exception:
             raise TypeError('The provided device variable must be a valid object of the Device class.')
 
-        # Verify if the specified taks_id variable is a string:
+        # Verify if the specified taks id variable is a string:
         if task_id is None or isinstance(task_id, str):
             # Celery task ID declaration:
             self.task_id = task_id
         else:
             # Change connection status to False:
             self.status = False
-            # Rais exception:
+            # Raise exception:
             raise TypeError('The provided task ID variable must be a string.')
 
         # Verify if the specified repeat_connection variable is a string:
@@ -72,7 +72,7 @@ class NapCon:
         else:
             # Change connection status to False:
             self.status = False
-            # Rais exception:
+            # Raise exception:
             raise TypeError('The provided repeat connection variable must be a intiger.')
 
         # Specify the device type name:

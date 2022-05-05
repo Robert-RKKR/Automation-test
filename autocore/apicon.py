@@ -53,7 +53,7 @@ class ApiCon:
         else:
             # Change connection status to False:
             self.status = False
-            # Rais exception:
+            # Raise exception:
             raise TypeError('The provided device variable must be a valid object of the Device class.')
 
         # Verify if the specified headers variable is a dictionary:
@@ -63,7 +63,7 @@ class ApiCon:
         else:
             # Change connection status to False:
             self.status = False
-            # Rais exception:
+            # Raise exception:
             raise TypeError('The provided headers variable must be a dictionary.')
 
         # Verify if the specified taks_id variable is a string:
@@ -73,7 +73,7 @@ class ApiCon:
         else:
             # Change connection status to False:
             self.status = False
-            # Rais exception:
+            # Raise exception:
             raise TypeError('The provided task ID variable must be a string.')
 
         # Collect user data:
@@ -130,14 +130,14 @@ class ApiCon:
         if url is not None and not isinstance(url, str):
             # Change connection status to False:
             self.status = False
-            # Rais exception:
+            # Raise exception:
             raise TypeError('The provided url variable must be a string.')
 
         # Verify if the specified payload variable is a string:
         if payload is not None and not isinstance(payload, str):
             # Change connection status to False:
             self.status = False
-            # Rais exception:
+            # Raise exception:
             raise TypeError('The provided payload variable must be a string.')
 
         if headers is not None:
@@ -148,7 +148,7 @@ class ApiCon:
             else:
                 # Change connection status to False:
                 self.status = False
-                # Rais exception:
+                # Raise exception:
                 raise TypeError('The provided headers variable must be a dictionary.')
 
     def _connection(self, request_method, url, payload) -> dict:
