@@ -39,6 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # Third-Party Apps:
+    'django_celery_beat',
+
     # Local Apps:
     'logger.apps.LoggerConfig',
     'inventory.apps.InventoryConfig',
@@ -73,6 +76,15 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'automation.wsgi.application'
+
+
+# Celery configuration
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 
 # Database
