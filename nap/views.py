@@ -24,7 +24,8 @@ def automation(request, pk):
 
     test_device = Device.objects.get(id=1)
     connection = NetCon(test_device, 'ei930u29eikdj', 2)
-    data['output'] = connection.send_commands(['show version', 'show ip int brief'])
+    data['output'] = connection.enable_commands(['show version', 'show ip int brief'])
+    connection.close()
     
     # GET method:
     return render(request, 'basic.html', data)

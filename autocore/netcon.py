@@ -41,7 +41,7 @@ class NetCon:
         
         Methods:
         --------
-        send_command: (command)
+        enable_commands: (command)
             Executes commands that do not require privileged mode.
         config_commands: (command)
             Executes commands that require privileged mode.
@@ -199,6 +199,9 @@ class NetCon:
 
             else:
 
+                # Start session timer:
+                self.session_timer = time.perf_counter()
+
                 # Log end of SSH connection
                 NetCon.logger.info(
                     f'SSH connection to device {self.hostname} has been established (Attempt: {i}).',
@@ -217,14 +220,31 @@ class NetCon:
                     # Return connection:
                     return connection
 
-    # def __del__(self):
-    #     """ End of SSH connection """
-    #     self.connection.close()
-    #     NetCon.logger.info('SSH session ended.', self.task_id, self.device)
-
     def __repr__(self) -> str:
         """ Connection class representation is IP address and port number of Https server. """
         return self.device.hostname
+
+    def close(self):
+        """ End of SSH connection """
+
+        # Close SSH connection:
+        self.connection.disconnect()
+        # End session timer:
+        finish_time = time.perf_counter()
+        self.session_timer = round(finish_time - self.session_timer, 5)
+        # Log close of SSH connection:
+        NetCon.logger.info('SSH session ended.', self.task_id, self.device)
+        # Log time of SSH session:
+        if self.session_timer > 2:
+            NetCon.logger.debug(
+                f'SSH session was active for {self.session_timer} seconds.',
+                self.task_id, self.device
+            )
+        else:
+            NetCon.logger.debug(
+                f'SSH session was active for {self.session_timer} second.',
+                self.task_id, self.device
+            )
 
     def check_device_type(self) -> str:
         """ Obtain network device type information using SSH protocol. """
@@ -344,7 +364,7 @@ class NetCon:
             # Return command output:
             return return_data
 
-    def send_commands(self, commands: str or list, expect_string: str = False) -> str or list:
+    def enable_commands(self, commands: str or list, expect_string: str = False) -> str or list:
         """
         Retrieves a string or list containing network CLI commands, and sends them to a network device using SSH protocol.
         ! Usable only with enable levels commend/s.
@@ -371,9 +391,6 @@ class NetCon:
 
         # Check connection status:
         if self._connection_status():
-
-            # Clear clock count time:
-            self.execution_time = 0.00
 
             # Start clock count:
             start_time = time.perf_counter()
@@ -431,8 +448,6 @@ class NetCon:
         if self.status is False:
             return False
         else:
-            # Clear clock count time:
-            self.execution_time = 0.00
 
             # Start clock count:
             start_time = time.perf_counter()

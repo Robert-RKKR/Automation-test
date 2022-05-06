@@ -36,10 +36,6 @@ class ApiCon:
         Methods:
         --------
         get, post, put, delete.
-
-        Return:
-        -------
-        None
         """
 
         # Verify if the specified device variable is a valid Device object:
