@@ -11,7 +11,6 @@ from netmiko import ConnectHandler
 from netmiko.ssh_autodetect import SSHDetect
 from netmiko.ssh_exception import  AuthenticationException
 from netmiko.ssh_exception import NetMikoTimeoutException
-from paramiko.ssh_exception import SSHException
 
 # Model Import:
 from inventory.models.device import DeviceType
@@ -22,15 +21,56 @@ from logger.logger import Logger
 
 
 class NetCon:
+    """
+    The NetCon class uses netmiko library, to establish a SSH connection with networks device.
+    
+    Attributes:
+    -----------------
+    device: Device class object
+        Device class object used to establish SSH connection.
+    device_type:
+        Xxx.
+    name:
+        Xxx.
+    hostname:
+        Xxx.
+    ssh_port:
+        Xxx.
+    certificate:
+        Xxx.
+    username:
+        Xxx.
+    password:
+        Xxx.
+    status:
+        Xxx.
+    execution_time:
+        Xxx.
+    session_timer:
+        Xxx.
+    unsupported:
+        Xxx.
+
+    Methods:
+    --------
+    check_device_type:
+        Returns information about device type, colleted via SSH protocol.
+    update_device_type:
+        Collect device type via SSH protocol and updates device type attributes of device object.
+    enabled_commands: (command)
+        Executes commands that do not require privileged mode.
+    config_commands: (command)
+        Executes commands that require privileged mode.
+    close:
+        Close SSH connection.
+    """
 
     # Logger class initiation:
     logger = Logger('SSH Netconf connection')
 
     def __init__(self, device: Device, task_id: str = None, repeat_connection: int = 3) -> None:
         """
-        The NetCon class uses netmiko library, to establish a SSH connection with networks device.
-        
-        Class attributes:
+        Parameters:
         -----------------
         device: Device object
             Provided device object, to establish a SSH connection.
@@ -38,13 +78,6 @@ class NetCon:
             Specifies the Celery task ID value, that will be added to logs messages.
         repeat_connection: Intiger
             Specifies how many times the SSH connection will be retried.
-        
-        Methods:
-        --------
-        enable_commands: (command)
-            Executes commands that do not require privileged mode.
-        config_commands: (command)
-            Executes commands that require privileged mode.
         """
 
         # Verify if the specified device variable is a valid Device object:
@@ -321,12 +354,12 @@ class NetCon:
         else:
             return True
 
-    def _command_execution(self, command: str, expect_string: str = False):
-        """ Xxx. """
+    def _enabled_command_execution(self, command: str, expect_string: str = False) -> str:
+        """ Enabled CLI command execution. """
 
         # Log start of command execution: 
         NetCon.logger.debug(
-            f'Sending of a new CLI command "{command}" has been started.',
+            f'Sending of a new enabled CLI command "{command}" has been started.',
             self.task_id, self.device
         )
 
@@ -358,13 +391,13 @@ class NetCon:
         else:
             # Log end of command execution:
             NetCon.logger.info(
-                f'The CLI command "{command}" has been sent.',
+                f'The enabled CLI command "{command}" has been sent.',
                 self.task_id, self.device
             )
             # Return command output:
             return return_data
 
-    def enable_commands(self, commands: str or list, expect_string: str = False) -> str or list:
+    def enabled_commands(self, commands: str or list, expect_string: str = False) -> str or list:
         """
         Retrieves a string or list containing network CLI commands, and sends them to a network device using SSH protocol.
         ! Usable only with enable levels commend/s.
@@ -399,7 +432,7 @@ class NetCon:
             return_data = None
 
             if isinstance(commands, str):
-                return_data = self._command_execution(commands, expect_string)
+                return_data = self._enabled_command_execution(commands, expect_string)
 
             elif isinstance(commands, list):
                 # Create temporary dictionary:
@@ -407,9 +440,9 @@ class NetCon:
                 # Run command execution one by one:
                 for command in commands:
                     if isinstance(command, str):
-                        temporary_data[command] = return_data = self._command_execution(command)
+                        temporary_data[command] = return_data = self._enabled_command_execution(command)
                     elif isinstance(command, dict):
-                        self._command_execution(
+                        self._enabled_command_execution(
                             command['command'],
                             command['expect_string']
                         )
@@ -438,51 +471,86 @@ class NetCon:
             # Return data:
             return return_data
 
-    def config_commands(self, command) -> str:
-        """ 
-        Takes list of strings or string (Networks commands), and send to network device using SSH protocol.
-        Usable only with configuration terminal levels commends.
+    def _config_command_execution(self, command: str) -> str:
+        """ Configuration CLI command execution. """
+
+        # Log start of command execution: 
+        NetCon.logger.debug(
+            f'Sending of a new configuration CLI command "{command}" has been started.',
+            self.task_id, self.device
+        )
+
+        try:
+            return_data = self.connection.send_config_set(command)
+
+        except UnboundLocalError as error:
+            NetCon.logger.error(error, self.task_id, self.device)
+            # Change connection status to False:
+            self.status = False
+            # Return connection starus:
+            return False
+
+        except OSError as error:
+            NetCon.logger.error(error, self.task_id, self.device)
+            # Change connection status to False:
+            self.status = False
+            # Return connection starus:
+            return False
+
+        else:
+            # Log end of command execution:
+            NetCon.logger.info(
+                f'The configuration CLI command "{command}" has been sent.',
+                self.task_id, self.device
+            )
+            # Return command output:
+            return return_data
+
+    def configuration_commands(self, commands: str or list) -> str:
+        """
+        Retrieves a string or list containing network CLI commands, and sends them to a network device using SSH protocol.
+        ! Usable only with configuration terminal levels commends.
+        
+        Parameters:
+        -----------------
+        commands: String
+            Provided device object, to establish a SSH connection.
+        commands: List
+            Provided device object, to establish a SSH connection.
+
+        Return:
+        --------
+        String containing command/s output.
         """
 
-        # Check connection status:
-        if self.status is False:
-            return False
+        if isinstance(commands, str) or isinstance(commands, list):
+            pass
         else:
+            # Raise exception:
+            raise TypeError('The provided command/s variable must be a string or list.')
+
+        # Check connection status:
+        if self._connection_status():
 
             # Start clock count:
             start_time = time.perf_counter()
 
             # Collect data from device:
-            return_data = None
-
-            # Try to sent command into network device:
-            try:
-                NetCon.logger.debug(
-                    f'Sending of a new CLI command "{command}" has started.',
-                    self.task_id, self.device
-                )
-                return_data = self.connection.send_config_set(command)
-                NetCon.logger.info(
-                    f'The CLI command "{command}" has been sent.',
-                    self.task_id, self.device
-                )
-            except UnboundLocalError as error:
-                NetCon.logger.error(error, self.task_id, self.device)
-                return error
+            return_data = self._config_command_execution(commands)
 
             # Finish clock count & method execution time:
             finish_time = time.perf_counter()
             self.execution_time = round(finish_time - start_time, 5)
 
-            # Log time of command execution:
+            # Log time of command/s execution:
             if self.execution_time > 2:
                 NetCon.logger.debug(
-                    f'Execution of "{command}" command taken {self.execution_time} seconds.',
+                    f'Execution of "{commands}" command/s taken {self.execution_time} seconds.',
                     self.task_id, self.device
                 )
             else:
                 NetCon.logger.debug(
-                    f'Execution of "{command}" command taken {self.execution_time} second.',
+                    f'Execution of "{commands}" command/s taken {self.execution_time} second.',
                     self.task_id, self.device
                 )
 

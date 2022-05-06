@@ -16,6 +16,28 @@ from logger.logger import Logger
 
 
 class ApiCon:
+    """
+    The API connection class uses requests library, to connect with network device using HTTPS protocol.
+        
+    Attributes:
+    -----------------
+    device: Device object
+        Provided device object, to establish a HTTPS connection.
+    hostname:
+        Xxx.
+    https_port:
+        Xxx.
+    certificate:
+        Xxx.
+    token:
+        Xxx.
+    device:
+        Xxx.
+    
+    Methods:
+    --------
+    get, post, put, delete.
+    """
     
     # Logger class initiation:
     logger = Logger('API connection')
@@ -24,7 +46,7 @@ class ApiCon:
         """
         The API connection class uses requests library, to connect with network device using HTTPS protocol.
             
-        Class attributes:
+        Parameters:
         -----------------
         device: Device object
             Provided device object, to establish a HTTPS connection.
@@ -32,10 +54,6 @@ class ApiCon:
             Specifies the Celery task ID value, that will be added to logs messages (Optional).
         headers: dict
             Additional header information (Optional).
-        
-        Methods:
-        --------
-        get, post, put, delete.
         """
 
         # Verify if the specified device variable is a valid Device object:
