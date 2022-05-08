@@ -17,3 +17,21 @@ ICONS = (
     (13, (f'{PATH}wifi-connection.svg')),
     (14, (f'{PATH}wireless-router.svg')),
 )
+
+DEVICE_TYPE = (
+    (0, ('Autodetect')),
+    (1, ('Cisco IOS')),
+    (2, ('Cisco IOS XE')),
+    (3, ('Cisco IOS XR')),
+    (4, ('Cisco NX OS')),
+    (5, ('Cisco ASA')),
+    (99, ('Unsupported')),
+)
+
+DEVICE_TYPE_NAPALM = {
+    1: 'ios',
+    2: 'iosxe',
+    3: 'iosxr',
+    4: 'nxos',
+    5: 'asa',
+}

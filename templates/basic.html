@@ -1,14 +1,19 @@
+{% load static %}
+
 <!DOCTYPE html>
 
 <html lang="{{ LANGUAGE_CODE }}">
 
     <head>
         <title>AutoCli</title>
+        <script src="{% static 'js/main.js' %}" async defer></script>
     </head>
 
     <body>
         
         {{ output }}
+
+        <p id="response_output"></p>
         
     </body>
 

@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 
     # Third-Party Apps:
     'django_celery_beat',
+    'channels',
 
     # Local Apps:
     'logger.apps.LoggerConfig',
@@ -76,6 +77,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'automation.wsgi.application'
+ASGI_APPLICATION = 'automation.asgi.application'
 
 
 # Celery configuration
@@ -85,6 +87,17 @@ CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+
+# For Websocket Support:
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('127.0.0.1', 6379)],
+        },
+    },
+}
 
 
 # Database

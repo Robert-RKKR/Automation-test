@@ -2,7 +2,7 @@
 from django.db import models
 
 # Applications Import:
-from .icons import ICONS
+from .icons import ICONS, DEVICE_TYPE
 
 # Other models Import:
 from .credential import Credential
@@ -11,11 +11,6 @@ from .credential import Credential
 from main.basemodel import BaseMainModel
 from main.basemodel import BaseSubModel
 
-
-class DeviceType(BaseMainModel):
-
-    # 
-    value = models.CharField(unique=True, max_length=32)
 
 # Model code:
 class Device(BaseMainModel):
@@ -41,7 +36,7 @@ class Device(BaseMainModel):
             'invalid': 'Enter a valid IP address or DNS resolvable hostname. It must contain 4 to 32 digits, letters and special characters -, _, . or spaces.',
         },
     )
-    device_type = models.ForeignKey(DeviceType, on_delete=models.PROTECT, null=True, blank=True)
+    device_type = models.IntegerField(choices=DEVICE_TYPE, default=0)
     ico = models.IntegerField(choices=ICONS, default=0)
     ssh_port = models.IntegerField(default=22)
     https_port = models.IntegerField(default=443)

@@ -1,3 +1,7 @@
+# Document descryption:
+__author__ = 'Robert Tadeusz Kucharski'
+__version__ = '1.0'
+
 # Models Imports:
 from .models.log_details_model import LogDetails
 from .models.log_model import Log
@@ -21,83 +25,83 @@ class Logger:
 
     def critical(self, message: str, task_id: str = None, correlated_object: object = None, **kwarg) -> Log:
         """
-            Create a new log based on the following data:
+        Create a new log based on the following data:
 
-                Method attributes:
-                -----------------
-                message: string
-                    Logging message string value.
-                task_id: string
-                    Celery task ID.
-                correlated_object: object
-                    Object of device or other model that is supported.
+        Parameters:
+        -----------------
+        message: string
+            Logging message string value.
+        task_id: string
+            Celery task ID.
+        correlated_object: object
+            Object of device or other model that is supported.
         """
         # Run proccess of log and details log creation:
-        log = self._run(CRITICAL, message, task_id, correlated_object, kwarg)
+        return self._run(CRITICAL, message, task_id, correlated_object, kwarg)
 
     def error(self, message: str, task_id: str = None, correlated_object: object = None, **kwarg) -> Log:
         """
-            Create a new log based on the following data:
+        Create a new log based on the following data:
 
-                Method attributes:
-                -----------------
-                message: string
-                    Logging message string value.
-                task_id: string
-                    Celery task ID.
-                correlated_object: object
-                    Object of device or other model that is supported.
+        Parameters:
+        -----------------
+        message: string
+            Logging message string value.
+        task_id: string
+            Celery task ID.
+        correlated_object: object
+            Object of device or other model that is supported.
         """
         # Run proccess of log and details log creation:
-        log = self._run(ERROR, message, task_id, correlated_object, kwarg)
+        return self._run(ERROR, message, task_id, correlated_object, kwarg)
 
     def warning(self, message: str, task_id: str = None, correlated_object: object = None, **kwarg) -> Log:
         """
-            Create a new log based on the following data:
+        Create a new log based on the following data:
 
-                Method attributes:
-                -----------------
-                message: string
-                    Logging message string value.
-                task_id: string
-                    Celery task ID.
-                correlated_object: object
-                    Object of device or other model that is supported.
+        Parameters:
+        -----------------
+        message: string
+            Logging message string value.
+        task_id: string
+            Celery task ID.
+        correlated_object: object
+            Object of device or other model that is supported.
         """
         # Run proccess of log and details log creation:
-        log = self._run(WARNING, message, task_id, correlated_object, kwarg)
+        return self._run(WARNING, message, task_id, correlated_object, kwarg)
 
     def info(self, message: str, task_id: str = None, correlated_object: object = None, **kwarg) -> Log:
         """
-            Create a new log based on the following data:
+        Create a new log based on the following data:
 
-                Method attributes:
-                -----------------
-                message: string
-                    Logging message string value.
-                task_id: string
-                    Celery task ID.
-                correlated_object: object
-                    Object of device or other model that is supported.
+        Parameters:
+        -----------------
+        message: string
+            Logging message string value.
+        task_id: string
+            Celery task ID.
+        correlated_object: object
+            Object of device or other model that is supported.
         """
         # Run proccess of log and details log creation:
-        log = self._run(INFO, message, task_id, correlated_object, kwarg)
+        return self._run(INFO, message, task_id, correlated_object, kwarg)
 
     def debug(self, message: str, task_id: str = None, correlated_object: object = None, **kwarg) -> Log:
         """
-            Create a new log based on the following data:
+        Create a new log based on the following data:
 
-                Method attributes:
-                -----------------
-                message: string
-                    Logging message string value.
-                task_id: string
-                    Celery task ID.
-                correlated_object: object
-                    Object of device or other model that is supported.
+        Parameters:
+        -----------------
+        message: string
+            Logging message string value.
+        task_id: string
+            Celery task ID.
+        correlated_object: object
+            Object of device or other model that is supported.
         """
         # Run proccess of log and details log creation:
-        log = self._run(DEBUG, message, task_id, correlated_object, kwarg)
+        return self._run(DEBUG, message, task_id, correlated_object, kwarg)
 
     def _run(self, severity, message, task_id, correlated_object, kwarg):
         """ Run proccess of log and details log creation. """

@@ -7,5 +7,5 @@ from .views import automation
 app_name = 'automation'
 
 urlpatterns = [
-    path('automation/<int:pk>', automation, name='automation'),
+    path('automation/<str:commands>', automation, name='automation'),
 ]

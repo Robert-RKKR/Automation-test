@@ -11,7 +11,6 @@ from .models.device import *
 admin.site.register(Color)
 admin.site.register(Credential)
 admin.site.register(Group)
-admin.site.register(DeviceType)
 admin.site.register(DeviceData)
 admin.site.register(DeviceRawData)
 admin.site.register(DeviceInterface)

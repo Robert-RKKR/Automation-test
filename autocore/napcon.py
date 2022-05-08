@@ -16,6 +16,25 @@ from inventory.models.device import Device
 from logger.logger import Logger
 
 class NapCon:
+    """
+    The NapCon class uses Napalm library, to establish a SSH connection with networks device.
+    
+    Attributes:
+    -----------------
+    device: Device object
+        Provided device object, to establish a SSH connection.
+    task_id: String
+        Specifies the Celery task ID value, that will be added to logs messages.
+    repeat_connection: Intiger
+        Specifies how many times the SSH connection will be retried.
+    
+    Methods:
+    --------
+    send_command: (command)
+        Executes commands that do not require privileged mode.
+    config_commands: (command)
+        Executes commands that require privileged mode.
+    """
 
     # Logger class initiation:
     logger = Logger('SSH Napalm connection')
@@ -23,22 +42,15 @@ class NapCon:
     def __init__(self, device: Device, task_id: str = None, repeat_connection: int = 3) -> None:
         """
         The NapCon class uses Napalm library, to establish a SSH connection with networks device.
-        
-        Class attributes:
+            
+        Parameters:
         -----------------
         device: Device object
-            Provided device object, to establish a SSH connection.
+            Provided device object, to establish a HTTPS connection.
         task_id: String
-            Specifies the Celery task ID value, that will be added to logs messages.
-        repeat_connection: Intiger
-            Specifies how many times the SSH connection will be retried.
-        
-        Methods:
-        --------
-        send_command: (command)
-            Executes commands that do not require privileged mode.
-        config_commands: (command)
-            Executes commands that require privileged mode.
+            Specifies the Celery task ID value, that will be added to logs messages (Optional).
+        headers: dict
+            Additional header information (Optional).
         """
 
         # Verify if the specified device variable is a valid Device object:
@@ -97,38 +109,22 @@ class NapCon:
         # Execution timer declaration:
         self.execution_time = None
 
+        # Session timer declaration:
+        self.session_timer = None
+
         # Device unsupported declaration:
         self.unsupported = None
 
+        # Depending on the type of network device, connect to the device using SSH protocol.
+        # Or specify the type of device first (If device type is autodetect).
+
+        # Check if the device type must be detected automatically:
+        if self.device_type == 'autodetect':
+
+            # Connect to device to check device type, using SSH protocol:
+            self.update_device_type()
+            
+        # Connect to device, using SSH protocol:
+        self.connection = self._ssh_connect()
 
 
-
-
-
-
-
-
-from napalm import get_network_driver
-
-driver = get_network_driver('ios')
-device = driver(
-    hostname='sandbox-iosxe-latest-1.cisco.com',
-    username='developer',
-    password='C1sco12345',
-    optional_args={'port': 22},
-)
-device.open()
-device.load_merge_candidate(filename='autocore/comands.conf')
-#device.load_merge_candidate(config='hostname test\ninterface Ethernet2\ndescription bla')
-print(device.compare_config())
-
-while(True):
-    output = input('Are you happy? y/n: ')
-    if output == 'y':
-        device.commit_config()
-        print('Changes accepted!')
-        break
-    elif output == 'n':
-        device.discard_config()
-        print('Changes discarded!')
-        break
