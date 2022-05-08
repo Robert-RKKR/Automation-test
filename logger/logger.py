@@ -185,4 +185,4 @@ class Logger:
                 return data
 
         # If the data provided is of an incorrect type, a type error will be raised:
-        raise TypeError(f'Provided data "{data}" is not {args} type. Insted is {type(data)} type.')
+        # raise TypeError(f'Provided data "{data}" is not {args} type. Insted is {type(data)} type.')

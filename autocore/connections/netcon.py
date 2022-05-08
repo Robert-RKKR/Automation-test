@@ -60,7 +60,13 @@ class NetCon(Connection):
         """
 
         # Check if device is supported before connection attempt:
-        if self.supported_device is not None:
+        if self.supported_device is False:
+
+            # Log unsupported device type:
+            self._log_error(logger, f'Device {self.device_hostname} is not supported')
+            return False
+
+        elif self.supported_device or autodetect:
 
             # Performs a specified number of SSH connection attempts to a specified device.
             for connection_attempts in range(1, self.repeat_connection + 1):
@@ -105,6 +111,18 @@ class NetCon(Connection):
                     self._log_error(logger, error)
                     # Return connection starus:
                     return self.connection_status
+                except OSError as error:
+                    self._log_error(logger, error)
+                    # Return connection starus:
+                    return self.connection_status
+                except TypeError as error:
+                    self._log_error(logger, error)
+                    # Return connection starus:
+                    return self.connection_status
+                except ValueError as error:
+                    self._log_error(logger, error)
+                    # Return connection starus:
+                    return self.connection_status
 
                 else:
                     # Start session timer:
@@ -122,30 +140,10 @@ class NetCon(Connection):
                     else: # Return connection:
                         return self.connection
 
-        else:
-            # Log unsupported device type:
-            self._log_error(logger, f'Device {self.device_hostname} is not supported')
-            return False
-
     def _check_device_type_name(self):
         """ Change device type ID to proper Netmiko device name. """
 
-        return DEVICE_TYPE_ID.get(self.device_type)
-
-    def _check_connection_status(self) -> bool:
-        """ Check the connection status and try to re-connect if necessary. """
-
-        # Check connection status:
-        if self.connection_status is not True:
-            # Try to reconnect SSH connection:
-            self._ssh_connect()
-            if self.connection_status is not True:
-                # Log failed confection status:
-                logger.warning(
-                    f'Command/s could not be executed because SSH connection was interrupted.',
-                    self.task_id, self.device_name)
-        # Return connection starus:
-        return self.connection_status
+        return DEVICE_TYPE_ID.get(self.device_type, False)
 
     def _enabled_command_execution(self, command: str, expect_string: str = False) -> str:
         """ Enabled CLI command execution. """
@@ -216,6 +214,17 @@ class NetCon(Connection):
                 self.task_id, self.device_name)
             # Return command output:
             return return_data
+
+    def open_connection(self):
+        """ Open a new SSH connection """
+
+        # Check if device need autodetect process:
+        if self.supported_device is None:
+            self.update_device_type()
+            self._ssh_connect()
+        # Check connection status:
+        elif self.connection_status is not True:
+            self._ssh_connect()
     
     def close_connection(self):
         """ End of SSH connection """
@@ -270,7 +279,7 @@ class NetCon(Connection):
                     'Device object has been updated.',
                     self.task_id, self.device_name)
                 # Update device type attribute:
-                self.device_type = discovered_device_type
+                self.device_type = device_name_id
                 # Return collected device type name:
                 return discovered_device_type
         
@@ -314,7 +323,7 @@ class NetCon(Connection):
             raise TypeError('The provided expect string variable must be a string.')
 
         # Check connection status:
-        if self._check_connection_status():
+        if self.connection_status:
 
             # Start clock count:
             start_time = time.perf_counter()
@@ -361,7 +370,8 @@ class NetCon(Connection):
 
         else:
             # Inform that the command cannot be sent:
-            self._log_error(logger, f'Command/s cannot be sent (SSH error).')
+            self._log_error(
+                logger, 'Command/s could not be executed because SSH connection was interrupted.')
 
     def configuration_commands(self, commands: str or list) -> str:
         """
@@ -388,7 +398,7 @@ class NetCon(Connection):
             raise TypeError('The provided command/s variable must be a string or list.')
 
         # Check connection status:
-        if self._check_connection_status():
+        if self.connection_status:
 
             # Start clock count:
             start_time = time.perf_counter()
@@ -415,4 +425,5 @@ class NetCon(Connection):
 
         else:
             # Inform that the command cannot be sent:
-            self._log_error(logger, f'Command/s cannot be sent (SSH error).')
+            self._log_error(
+                logger, 'Command/s could not be executed because SSH connection was interrupted.')

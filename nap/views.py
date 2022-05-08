@@ -27,6 +27,7 @@ def test_task(self) -> bool:
     output = []
     test_device = Device.objects.get(id=1)
     connection = NetCon(test_device, self.request.id)
+    connection.open_connection()
     output.append(connection.enabled_commands(['show version', 'show ip int brief']))
     output.append(connection.configuration_commands(['hostname RKKR', 'no ip domain name']))
     connection.close_connection()
@@ -61,7 +62,7 @@ def automation(request, commands):
 
     commands = commands.split('_')
     commands = ' '.join(commands)
-    data['output'] = test_task.delay()
+    data['output'] = test_task()
 
     # test_device = Device.objects.get(id=1)
     # connection = NetCon(test_device)
