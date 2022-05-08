@@ -2,9 +2,6 @@
 __author__ = 'Robert Tadeusz Kucharski'
 __version__ = '1.0'
 
-# Python Import:
-import time
-
 # Model Import:
 from inventory.models.device import Device
 
@@ -41,9 +38,6 @@ class Connection:
         Xxx.
     repeat_connection:
         Xxx.
-
-    Methods:
-    --------
     """
 
     def __init__(self, device: Device, task_id: str = None, repeat_connection: int = 3) -> None:

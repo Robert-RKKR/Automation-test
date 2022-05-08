@@ -145,9 +145,9 @@ class Logger:
         # Check provided data:
         if isinstance(message, str) is False:
             raise TypeError('The provided message variable must be string.')
-        if isinstance(task_id, str) is False and task_id is not None:
+        if task_id(message, str) is False:
             raise TypeError('The provided task id variable must be string.')
-        if isinstance(correlated_object, str) is False and correlated_object is not None:
+        if isinstance(correlated_object, str) is False:
             raise TypeError('The provided correlated object variable must be string.')
 
         # Create new log based on provided data:

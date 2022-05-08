@@ -62,7 +62,7 @@ def automation(request, commands):
 
     commands = commands.split('_')
     commands = ' '.join(commands)
-    data['output'] = test_task()
+    data['output'] = test_task.delay()
 
     # test_device = Device.objects.get(id=1)
     # connection = NetCon(test_device)

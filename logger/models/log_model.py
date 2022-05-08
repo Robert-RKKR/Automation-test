@@ -30,10 +30,11 @@ class Log(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     # Log data:
-    application = models.CharField(max_length=128)
+    application = models.CharField(max_length=64)
     severity = models.IntegerField(choices=SEVERITY)
     message = models.CharField(max_length=1024)
-    task_id = models.CharField(max_length=128, null=True)
+    correlated_object = models.CharField(max_length=64)
+    task_id = models.CharField(max_length=64, null=True)
     user_message = models.BooleanField(default=False)
 
     # Models corelations:
