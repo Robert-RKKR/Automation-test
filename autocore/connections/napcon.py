@@ -11,27 +11,18 @@ import napalm
 # Connection Import:
 from .connection import Connection
 
+# Device name translation Import:
+from .device_name_translation import collect_device_id_from_name
+from .device_name_translation import collect_device_name_from_id
+
 # Logger import:
 from logger.logger import Logger
 
 # Logger class initiation:
 logger = Logger('SSH Netconf connection')
 
-# Device type ID to name translation:
-DEVICE_TYPE_ID = {
-    1: 'ios',
-    2: 'ios',
-    3: 'iosxr',
-    4: 'nxos',
-}
-DEVICE_TYPE_NAME = {
-    'ios': 1,
-    'ios': 2,
-    'iosxr': 3,
-    'nxos': 4,
-}
 
-
+# Main NapCon class:
 class NapCon(Connection):
     """
     The NapCon class uses Napalm library, to establish a SSH connection with networks device.
@@ -94,4 +85,4 @@ class NapCon(Connection):
     def _check_device_type_name(self):
         """ Change device type ID to proper Netmiko device name. """
 
-        return DEVICE_TYPE_ID.get(self.device_type)
+        return collect_device_name_from_id(self.device_type, netmiko=True)

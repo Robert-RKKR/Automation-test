@@ -1,11 +1,15 @@
 # Document descryption:
 __author__ = 'Robert Tadeusz Kucharski'
-__version__ = '1.0'
+__version__ = '1.1'
+
+# Python Import:
+import time
 
 # Model Import:
 from inventory.models.device import Device
 
 
+# Main connection class:
 class Connection:
     """
     Basic connection class.
@@ -38,9 +42,11 @@ class Connection:
         Xxx.
     repeat_connection:
         Xxx.
+    repeat_connection_time:
+        Xxx.
     """
 
-    def __init__(self, device: Device, task_id: str = None, repeat_connection: int = 3) -> None:
+    def __init__(self, device: Device, task_id: str = None, repeat_connection: int = 3, repeat_connection_time: int = 2) -> None:
         """
         Parameters:
         -----------------
@@ -76,30 +82,28 @@ class Connection:
                     'Provided device object is not compatible with connection class.')
 
         else:
-            # Change connection status to False:
-            self.connection_status = False
-            # Raise exception:
-            raise TypeError('The provided device variable must be a valid object of the Device class.')
+            self._raise_exception('The provided device variable must be a valid object of the Device class.')
 
         # Verify if the specified taks_id variable is a string:
         if task_id is None or isinstance(task_id, str):
             # Celery task ID declaration:
             self.task_id = task_id
         else:
-            # Change connection status to False:
-            self.connection_status = False
-            # Raise exception:
-            raise TypeError('The provided task ID variable must be a string.')
+            self._raise_exception('The provided task ID variable must be a string.')
 
-        # Verify if the specified repeat_connection variable is a string:
+        # Verify if the specified repeat connection variable is a string:
         if repeat_connection is None or isinstance(repeat_connection, int):
             # Celery task ID declaration:
             self.repeat_connection = repeat_connection
         else:
-            # Change connection status to False:
-            self.connection_status = False
-            # Raise exception:
-            raise TypeError('The provided repeat connection variable must be a intiger.')
+            self._raise_exception('The provided repeat connection variable must be a intiger.')
+
+        # Verify if the specified repeat connection time variable is a string:
+        if repeat_connection_time is None or isinstance(repeat_connection_time, int):
+            # Celery task ID declaration:
+            self.repeat_connection_time = repeat_connection_time
+        else:
+            self._raise_exception('The provided repeat connection variable must be a intiger.')
 
         # Connection status declaration:
         self.connection_status = None
@@ -137,3 +141,54 @@ class Connection:
         logger.error(error, self.task_id, self.device_name)
         # Change connection status to False:
         self.connection_status = False
+
+    def _sleep(self):
+        """ Sleep definet amount of time. """
+
+        time.sleep(self.repeat_connection_time)
+
+    def _start_execution_timer(self):
+        """ Start command execution time counting. """
+
+        # Start clock count:
+        return time.perf_counter()
+
+    def _end_execution_timer(self, start_time, logger, commands):
+        """ End command execution time counting. """
+
+        # Finish clock count & method execution time:
+        finish_time = time.perf_counter()
+        self.execution_time = round(finish_time - start_time, 5)
+
+        # Log time of command/s execution:
+        if self.execution_time > 2:
+            logger.debug(
+                f'Execution of "{commands}" command/s taken {self.execution_time} seconds.',
+                self.task_id, self.device_name)
+        else:
+            logger.debug(
+                f'Execution of "{commands}" command/s taken {self.execution_time} second.',
+                self.task_id, self.device_name)
+
+    def _start_connection_timer(self):
+        """ Start connection time counting. """
+
+        # Start clock count:
+        return time.perf_counter()
+
+    def _end_connection_timer(self, start_time, logger, commands):
+        """ End connection time counting. """
+
+        # Finish clock count & method execution time:
+        finish_time = time.perf_counter()
+        self.connection_timer = round(finish_time - self.connection_timer, 5)
+
+        # Log time of SSH session:
+        if self.connection_timer > 2:
+            logger.debug(
+                f'SSH session was active for {self.connection_timer} seconds.',
+                self.task_id, self.device_name)
+        else:
+            logger.debug(
+                f'SSH session was active for {self.connection_timer} second.',
+                self.task_id, self.device_name)
