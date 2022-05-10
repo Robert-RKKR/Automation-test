@@ -2,7 +2,8 @@
 from django.db import models
 
 # Applications Import:
-from .icons import ICONS, DEVICE_TYPE
+from autocore.connections.device_name_translation import DEVICE_TYPE
+from .icons import ICONS
 
 # Other models Import:
 from .credential import Credential

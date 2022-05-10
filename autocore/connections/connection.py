@@ -138,12 +138,12 @@ class Connection:
         """ Xxx. """
 
         # Log error:
-        logger.error(error, self.task_id, self.device_name)
+        logger.error(str(error), self.task_id, self.device_name)
         # Change connection status to False:
         self.connection_status = False
 
     def _sleep(self):
-        """ Sleep definet amount of time. """
+        """ Sleep defined amount of time. """
 
         time.sleep(self.repeat_connection_time)
 
@@ -176,7 +176,7 @@ class Connection:
         # Start clock count:
         return time.perf_counter()
 
-    def _end_connection_timer(self, start_time, logger, commands):
+    def _end_connection_timer(self, logger):
         """ End connection time counting. """
 
         # Finish clock count & method execution time:

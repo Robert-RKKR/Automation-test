@@ -205,7 +205,7 @@ class NetCon(Connection):
 
         # Check if device need autodetect process:
         if self.supported_device is None:
-            # Update device type based on information colected via SSH protocol:
+            # Update device type based on information collected via SSH protocol:
             self.update_device_type()
             # Connect to network device:
             self._ssh_connect()
@@ -213,7 +213,7 @@ class NetCon(Connection):
         elif self.connection_status is not True:
             self._ssh_connect()
 
-        # Start connection timer if connectet sucesfull:
+        # Start connection timer if connected successfully:
         if self.connection_status:
             # Start session timer:
             self.connection_timer = self._start_connection_timer()
@@ -285,7 +285,7 @@ class NetCon(Connection):
         expect_string: String
             Specifies the Celery task ID value, that will be added to logs messages.
         api: bool
-            If True, method will return output in dictinary format (Using regex).
+            If True, method will return output in dictionary format (Using regex).
 
         Return:
         --------
@@ -324,14 +324,13 @@ class NetCon(Connection):
                 # Run command execution one by one:
                 for command in commands:
                     if isinstance(command, str):
-                        temporary_data[command] = return_data = self._enabled_command_execution(command)
-                    elif isinstance(command, dict):
-                        self._enabled_command_execution(
-                            command['command'],
-                            command['expect_string'])
+                        temporary_data[command] = self._enabled_command_execution(command)
+                    elif isinstance(command, list):
+                        return_data = self._enabled_command_execution(
+                            command[0], command[1])
                     else:
                         # Raise exception:
-                        raise TypeError('Xxxxxxx.')
+                        raise TypeError('Wrong data type.')
                 # Add temporary dictionary to return data:
                 return_data = temporary_data
 
