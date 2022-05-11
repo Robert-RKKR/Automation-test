@@ -2,6 +2,10 @@
 __author__ = 'Robert Tadeusz Kucharski'
 __version__ = '2.1'
 
+# Python Import:
+import textfsm
+import os
+
 # Netmiko Import:
 from paramiko import ssh_exception
 from netmiko import ConnectHandler
@@ -13,8 +17,9 @@ from netmiko.ssh_exception import NetMikoTimeoutException
 from .connection import Connection
 
 # Device name translation Import:
-from .device_name_translation import collect_device_id_from_name
-from .device_name_translation import collect_device_name_from_id
+from .device_name_translation import collect_device_type_commands_from_id
+from .device_name_translation import collect_device_type_id_from_name
+from .device_name_translation import collect_device_type_name_from_id
 
 # Logger import:
 from logger.logger import Logger
@@ -128,7 +133,7 @@ class NetCon(Connection):
     def _check_device_type_name(self):
         """ Change device type ID to proper Netmiko device name. """
 
-        return collect_device_name_from_id(self.device_type, netmiko=True)
+        return collect_device_type_name_from_id(self.device_type, netmiko=True)
 
     def _enabled_command_execution(self, command: str, expect_string: str = False) -> str:
         """ Enabled CLI command execution. """
@@ -200,6 +205,42 @@ class NetCon(Connection):
             # Return command output:
             return return_data
 
+    def _process_command_output_to_dictionary(self, commands):
+        """ Convert commands output to dictionary based on Text FSM templates. """
+
+        # Prepare dictionary of process data:
+        return_data = {}
+
+        for commad in commands:
+            
+            # FSM result list:
+            fsm_result = []
+            # Collect command information:
+            command_output = commands[commad]
+            command_no_space = commad.strip().replace(' ', '_')
+            # Collect template data:
+            device_type_command = collect_device_type_commands_from_id(self.device_type)
+            command_filename = f'{device_type_command}_{command_no_space}.textfsm'
+            path = f'autocore/connections/commands/{device_type_command}/{command_filename}'
+
+            try: # Try to parse collected data from Text FSM:
+                with open(path) as template:
+                    fsm = textfsm.TextFSM(template)
+                    result = fsm.ParseText(command_output)
+                    # Create one or many dictionaries from Text FSM result:
+                    for value in result:
+                        fsm_result.append(dict(zip(fsm.header, value)))
+            except FileNotFoundError as error:
+                self._log_error(logger, error)
+            except textfsm.TextFSMError as error:
+                self._log_error(logger, error)
+            else:
+                # Add FSM result into dictionary of process data:
+                return_data[commad] = fsm_result
+
+        # Return all collected data:
+        return return_data
+
     def open_connection(self):
         """ Open a new SSH connection """
 
@@ -242,7 +283,7 @@ class NetCon(Connection):
         discovered_device_type = self._ssh_connect(autodetect=True)
 
         # Collect device type ID:
-        device_name_id = collect_device_id_from_name(discovered_device_type, netmiko=True)
+        device_name_id = collect_device_type_id_from_name(discovered_device_type, netmiko=True)
 
         if device_name_id:
             try: # Update current device object:
@@ -271,7 +312,7 @@ class NetCon(Connection):
             # Return collected device type name:
             return discovered_device_type
 
-    def enabled_commands(self, commands: str or list, expect_string: str = False, api: bool = False) -> str or list:
+    def enabled_commands(self, commands: str or list, expect_string: str = False, return_dictionary: bool = False) -> str or list:
         """
         Retrieves a string or list containing network CLI commands, and sends them to a network device using SSH protocol.
         ! Usable only with enable levels commend/s.
@@ -306,6 +347,14 @@ class NetCon(Connection):
             # Raise exception:
             raise TypeError('The provided expect string variable must be a string.')
 
+            
+        # Check if provided expect string variable is valid string:
+        if isinstance(return_dictionary, bool) or return_dictionary is False:
+            pass
+        else:
+            # Raise exception:
+            raise TypeError('The provided return dictionary string variable must be a bool.')
+
         # Check connection status:
         if self.connection_status:
 
@@ -313,33 +362,29 @@ class NetCon(Connection):
             start_time = self._start_execution_timer()
 
             # Collect data from device:
-            return_data = None
+            return_data = {}
 
             if isinstance(commands, str):
-                return_data = self._enabled_command_execution(commands, expect_string)
+                return_data[commands] = self._enabled_command_execution(commands, expect_string)
 
             elif isinstance(commands, list):
-                # Create temporary dictionary:
-                temporary_data = {}
                 # Run command execution one by one:
                 for command in commands:
                     if isinstance(command, str):
-                        temporary_data[command] = self._enabled_command_execution(command)
+                        return_data[command] = self._enabled_command_execution(command)
                     elif isinstance(command, list):
                         return_data = self._enabled_command_execution(
                             command[0], command[1])
                     else:
                         # Raise exception:
                         raise TypeError('Wrong data type.')
-                # Add temporary dictionary to return data:
-                return_data = temporary_data
 
             # Finish clock count & method execution time:
             self._end_execution_timer(start_time, logger, commands)
             
             # Return data:
-            if api:
-                pass
+            if return_dictionary:
+                return self._process_command_output_to_dictionary(return_data)
             else:
                 return return_data
 

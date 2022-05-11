@@ -22,16 +22,16 @@ channel_layer = get_channel_layer()
 logger = Logger('Page')
 
 @shared_task(bind=True, track_started=True, name='Test task')
-def test_task(self) -> bool:
+def test_task(self, commands) -> bool:
     
     output = []
     test_device = Device.objects.get(id=1)
     connection = NetCon(test_device, self.request.id)
     connection.open_connection()
-    output.append(connection.enabled_commands([
-        ['show version', 'Cisco']
-    ]))
-    # output.append(connection.enabled_commands(['show version']))
+    # output.append(connection.enabled_commands([
+    #     ['show version', 'Cisco']
+    # ]))
+    output.append(connection.enabled_commands(commands, return_dictionary=True))
     # output.append(connection.enabled_commands('show version', 'Cisco'))
     # output.append(connection.configuration_commands(['hostname RKKR', 'no ip domain name']))
     connection.close_connection()
@@ -67,7 +67,7 @@ def automation(request, commands):
     commands = commands.split('_')
     commands = ' '.join(commands)
     # data['output'] = test_task.delay()
-    data['output'] = test_task()
+    data['output'] = test_task(commands)
 
     # test_device = Device.objects.get(id=1)
     # connection = NetCon(test_device)

@@ -19,7 +19,7 @@ from .device_name_translation import collect_device_name_from_id
 from logger.logger import Logger
 
 # Logger class initiation:
-logger = Logger('SSH Netconf connection')
+logger = Logger('SSH Napalm connection')
 
 
 # Main NapCon class:

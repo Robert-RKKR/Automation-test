@@ -46,7 +46,7 @@ class Connection:
         Xxx.
     """
 
-    def __init__(self, device: Device, task_id: str = None, repeat_connection: int = 3, repeat_connection_time: int = 2) -> None:
+    def __init__(self, device: Device, task_id: str = None, repeat_connection: int = 3, repeat_connection_time: int = 2, headers: dict = None) -> None:
         """
         Parameters:
         -----------------
@@ -66,7 +66,9 @@ class Connection:
                 self.device_name = device.name
                 self.device_hostname = device.hostname
                 self.device_ssh_port = device.ssh_port
-                self.device_certificate = device.https_port
+                self.device_https_port = device.https_port
+                self.device_certificate = device.certificate
+                self.device_token = device.token
                 self.device_type = device.device_type
 
                 # Collect user data:
@@ -91,19 +93,26 @@ class Connection:
         else:
             self._raise_exception('The provided task ID variable must be a string.')
 
-        # Verify if the specified repeat connection variable is a string:
+        # Verify if the specified repeat connection variable is a intiger:
         if repeat_connection is None or isinstance(repeat_connection, int):
             # Celery task ID declaration:
             self.repeat_connection = repeat_connection
         else:
             self._raise_exception('The provided repeat connection variable must be a intiger.')
 
-        # Verify if the specified repeat connection time variable is a string:
+        # Verify if the specified repeat connection time variable is a intiger:
         if repeat_connection_time is None or isinstance(repeat_connection_time, int):
             # Celery task ID declaration:
             self.repeat_connection_time = repeat_connection_time
         else:
             self._raise_exception('The provided repeat connection variable must be a intiger.')
+
+        # Verify if the specified headers variable is a dictinary:
+        if headers is None or isinstance(headers, dict):
+            # Celery task ID declaration:
+            self.headers = headers
+        else:
+            self._raise_exception('The provided headers variable must be a dictinary.')
 
         # Connection status declaration:
         self.connection_status = None

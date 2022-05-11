@@ -32,6 +32,10 @@ CISCO_WLC = {
     'repr': 'Cisco WLC',
     'commands': 'cisco_wlc'
 }
+FORTINET_OS = {
+    'repr': 'FortiNet OS',
+    'commands': 'fortinet_os'
+}
 
 # Device type model variables:
 DEVICE_TYPE = (
@@ -42,6 +46,7 @@ DEVICE_TYPE = (
     (4, (CISCO_NXOS['repr'])),
     (5, (CISCO_ASA['repr'])),
     (6, (CISCO_WLC['repr'])),
+    (7, (FORTINET_OS['repr'])),
     (99, ('Unsupported')),
 )
 
@@ -53,10 +58,15 @@ DEVICE_TYPE_ID = {
     4: CISCO_NXOS,
     5: CISCO_ASA,
     6: CISCO_WLC,
+    7: FORTINET_OS,
 }
 
+def collect_device_type_commands_from_id(device_type_id: int):
+
+    return DEVICE_TYPE_ID.get(device_type_id, {}).get('commands', False)
+
 # Device name translation functions:
-def collect_device_name_from_id(device_type_id: int, netmiko: bool = False, napalm: bool = False):
+def collect_device_type_name_from_id(device_type_id: int, netmiko: bool = False, napalm: bool = False):
     
     # Check version of device type name:
     if netmiko:
@@ -66,7 +76,7 @@ def collect_device_name_from_id(device_type_id: int, netmiko: bool = False, napa
     else:
         pass
 
-def collect_device_id_from_name(device_type_name: str, netmiko: bool = False, napalm: bool = False):
+def collect_device_type_id_from_name(device_type_name: str, netmiko: bool = False, napalm: bool = False):
 
     def search_loop(version):
         for id in DEVICE_TYPE_ID:
