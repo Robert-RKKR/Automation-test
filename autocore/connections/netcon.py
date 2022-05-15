@@ -142,35 +142,63 @@ class NetCon(Connection):
         logger.debug(
             f'Sending of a new enabled CLI command "{command}" has been started.',
             self.task_id, self.device_name)
+        
+        return_data = {
+            'command': command,
+            'expect_string': expect_string,
+            'command_output': None,
+            'proccessed_output': None,
+            'error': None
+        }
 
         try:
             if expect_string is False:
-                return_data = self.connection.send_command(
+                command_output = self.connection.send_command(
                     command_string=command)
             else:
-                return_data = self.connection.send_command(
+                command_output = self.connection.send_command(
                     command_string=command,
                     expect_string=expect_string)
 
         except UnboundLocalError as error:
             self._log_error(logger, error)
+            # Add error to return data:
+            return_data['command_output'] = False
+            return_data['error'] = error
             # Return connection starus:
-            return self.connection_status
+            return return_data
         except OSError as error:
             self._log_error(logger, error)
+            # Add error to return data:
+            return_data['command_output'] = False
+            return_data['error'] = error
             # Return connection starus:
-            return self.connection_status
+            return return_data
         except TypeError as error:
             self._log_error(logger, error)
+            # Add error to return data:
+            return_data['command_output'] = False
+            return_data['error'] = error
             # Return connection starus:
-            return self.connection_status
+            return return_data
 
         else:
             # Log end of command execution:
             logger.info(
                 f'The enabled CLI command "{command}" has been sent.',
                 self.task_id, self.device_name)
-            # Return command output:
+
+            # Check if received output is valid:
+            if 'Invalid input detected' in command_output:
+                return_data['command_output'] = False
+                return_data['error'] = 'Provided command is not valid'
+            else:
+                # Add command output to return dictionary:
+                return_data['command_output'] = command_output
+                # Proccess outpud data to dictionary:
+                return_data['proccessed_output'] = self._process_command_output_to_dictionary(command, command_output)
+            
+            # Return data:
             return return_data
 
     def _config_command_execution(self, command: str) -> str:
@@ -205,41 +233,31 @@ class NetCon(Connection):
             # Return command output:
             return return_data
 
-    def _process_command_output_to_dictionary(self, commands):
+    def _process_command_output_to_dictionary(self, command, command_output):
         """ Convert commands output to dictionary based on Text FSM templates. """
 
-        # Prepare dictionary of process data:
-        return_data = {}
+        # FSM result list:
+        fsm_result = []
+        # Collect command information:
+        command_no_space = command.strip().replace(' ', '_')
+        # Collect template data:
+        device_type_command = collect_device_type_commands_from_id(self.device_type)
+        command_filename = f'{device_type_command}_{command_no_space}.textfsm'
+        path = f'autocore/connections/commands/{device_type_command}/{command_filename}'
 
-        for commad in commands:
-            
-            # FSM result list:
-            fsm_result = []
-            # Collect command information:
-            command_output = commands[commad]
-            command_no_space = commad.strip().replace(' ', '_')
-            # Collect template data:
-            device_type_command = collect_device_type_commands_from_id(self.device_type)
-            command_filename = f'{device_type_command}_{command_no_space}.textfsm'
-            path = f'autocore/connections/commands/{device_type_command}/{command_filename}'
-
-            try: # Try to parse collected data from Text FSM:
-                with open(path) as template:
-                    fsm = textfsm.TextFSM(template)
-                    result = fsm.ParseText(command_output)
-                    # Create one or many dictionaries from Text FSM result:
-                    for value in result:
-                        fsm_result.append(dict(zip(fsm.header, value)))
-            except FileNotFoundError as error:
-                self._log_error(logger, error)
-            except textfsm.TextFSMError as error:
-                self._log_error(logger, error)
-            else:
-                # Add FSM result into dictionary of process data:
-                return_data[commad] = fsm_result
-
-        # Return all collected data:
-        return return_data
+        try: # Try to parse collected data from Text FSM:
+            with open(path) as template:
+                fsm = textfsm.TextFSM(template)
+                result = fsm.ParseText(command_output)
+                # Create one or many dictionaries from Text FSM result:
+                for value in result:
+                    fsm_result.append(dict(zip(fsm.header, value)))
+        except FileNotFoundError as error:
+            self._log_error(logger, error)
+        except textfsm.TextFSMError as error:
+            self._log_error(logger, error)
+        else:
+            return fsm_result
 
     def open_connection(self):
         """ Open a new SSH connection """
@@ -312,7 +330,7 @@ class NetCon(Connection):
             # Return collected device type name:
             return discovered_device_type
 
-    def enabled_commands(self, commands: str or list, expect_string: str = False, return_dictionary: bool = False) -> str or list:
+    def enabled_commands(self, commands: str or list, expect_string: str = False) -> str or list:
         """
         Retrieves a string or list containing network CLI commands, and sends them to a network device using SSH protocol.
         ! Usable only with enable levels commend/s.
@@ -347,14 +365,6 @@ class NetCon(Connection):
             # Raise exception:
             raise TypeError('The provided expect string variable must be a string.')
 
-            
-        # Check if provided expect string variable is valid string:
-        if isinstance(return_dictionary, bool) or return_dictionary is False:
-            pass
-        else:
-            # Raise exception:
-            raise TypeError('The provided return dictionary string variable must be a bool.')
-
         # Check connection status:
         if self.connection_status:
 
@@ -364,29 +374,31 @@ class NetCon(Connection):
             # Collect data from device:
             return_data = {}
 
+            # First option: comand is string:
             if isinstance(commands, str):
+                # Save command execution output to dictionary:
                 return_data[commands] = self._enabled_command_execution(commands, expect_string)
 
-            elif isinstance(commands, list):
-                # Run command execution one by one:
+            elif isinstance(commands, list) or isinstance(commands, tuple):
                 for command in commands:
+
+                    # Second option: comand is list / tuple of strings:
                     if isinstance(command, str):
+                        # Save command execution output to dictionary:
                         return_data[command] = self._enabled_command_execution(command)
-                    elif isinstance(command, list):
-                        return_data = self._enabled_command_execution(
-                            command[0], command[1])
+
+                    # Third option: comand is list / tuple of lists or tuples:
+                    elif isinstance(command, list) or isinstance(command, tuple):
+                        # Save command execution output to dictionary:
+                        return_data[command] = self._enabled_command_execution(command[0], command[1])
                     else:
                         # Raise exception:
                         raise TypeError('Wrong data type.')
 
             # Finish clock count & method execution time:
             self._end_execution_timer(start_time, logger, commands)
-            
             # Return data:
-            if return_dictionary:
-                return self._process_command_output_to_dictionary(return_data)
-            else:
-                return return_data
+            return return_data
 
         else:
             # Inform that the command cannot be sent:

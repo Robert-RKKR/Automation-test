@@ -1,10 +1,12 @@
 # Django Import:
 import time
+import yaml
 from django.shortcuts import render
 
 # Application Import:
 from logger.logger import Logger
 from autocore.connections.netcon import NetCon
+from autocore.connections.yaml_reader import yaml_read
 
 # Model Import:
 from inventory.models.device import Device
@@ -31,14 +33,13 @@ def test_task(self, commands) -> bool:
     # output.append(connection.enabled_commands([
     #     ['show version', 'Cisco']
     # ]))
-    output.append(connection.enabled_commands(commands, return_dictionary=True))
+    output.append(connection.enabled_commands('show ip route'))
     # output.append(connection.enabled_commands('show version', 'Cisco'))
     # output.append(connection.configuration_commands(['hostname RKKR', 'no ip domain name']))
     connection.close_connection()
 
     async_to_sync(channel_layer.group_send)('collect', {'type': 'send_collect', 'text': str(output)})
     return output
-
 
 # Views:
 def automation(request, commands):
@@ -67,7 +68,9 @@ def automation(request, commands):
     commands = commands.split('_')
     commands = ' '.join(commands)
     # data['output'] = test_task.delay()
-    data['output'] = test_task(commands)
+    # data['output'] = test_task(commands)
+    # data['output'] = yaml_read('autocore/connections/templates/cisco_ios.yml')
+    data['output'] = yaml_read('autocore/connections/templates/device_types.yml')
 
     # test_device = Device.objects.get(id=1)
     # connection = NetCon(test_device)

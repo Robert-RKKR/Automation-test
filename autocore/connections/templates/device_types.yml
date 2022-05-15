@@ -1,0 +1,39 @@
+---
+1:
+    representation: Cisco IOS
+    textfsm: cisco_ios
+    netmiko: cisco_ios
+    napalm: ios
+    commands:
+      - show interfaces
+      - show interfaces switchport
+      - show ip interface
+2:
+    representation: Cisco XE
+    textfsm: cisco_ios
+    netmiko: cisco_xe
+    napalm: ios
+    commands:
+      - show interfaces
+      - show interfaces switchport
+      - show ip interface
+3:
+    representation: Cisco XR
+    textfsm: cisco_xr
+    netmiko: cisco_xr
+    napalm: iosxr
+4:
+    representation: Cisco NXOS
+    textfsm: cisco_nxos
+    netmiko: cisco_nxos
+    napalm: nxos
+5:
+    representation: Cisco ASA
+    textfsm: cisco_asa
+    netmiko: cisco_asa
+6:
+    representation: Cisco WLC
+    textfsm: cisco_wlc
+7:
+    representation: FortiNet OS
+    textfsm: fortinet_os
